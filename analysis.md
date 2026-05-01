@@ -1,7 +1,7 @@
 # Template Hierarchy
 
 - Each template has exactly one ancestor (which must be an Artitas template)
-- Templates often exist in identical paths in more than one world (ST and GC; NL is usually unique due to being the common world)
+- Templates often exist in identical paths in more than one screen (ST and GC; NL is usually unique due to being the common screen context)
 - Templates may inherit across content pack boundaries (and overrides across content pack boundaries *must* do so to avoid self-parenting)
 
 # Template Structure
@@ -16,9 +16,15 @@ asset:
 		# Implication: *Other* things can inherit from each other.
 		# But what things would this make sense for? Could this be shrapnel from Unity?
 		$t: ar_Template 
+
 	Name: apparentlyIrrelevant # But let's try to do better! In the non-degenerate case, this matches the template filename.
+
 	_components: # We'll analyze the anatomy of a component in a later section.
 		- someComponent
+
+	_excluded: # No idea how this works, but it's component-esque.
+		- someExclusion
+
 	# Need to be careful to use string serialization. Analysis of old templates says 4 is Artitas.Template.
 	# Would be nice if *everything* either existed in the type registry or used its fully qualified type, though...
 	$t: "4"
@@ -32,8 +38,8 @@ This can be simplified into the following XenoYAML subtree:
 # Can be omitted if the ancestor lives in the same YAML tree, but will I support that...?
 # ... Incidentally, yes, I intend to support all three options. Why not?
 parent: 
-	pack: xenonauts # Can be blank if unneeded; XenoYAML must automatically detect if it's an override and append the content pack prefix.
-	type: GC
+	pack: xenonauts # Can be blank if unneeded; XenoYAML must automatically detect if it's an override (path == parent.path) and append the content pack prefix on export.
+	screen: GC
 	path: item/armour/servitor
 name: servitor # Can also be autofilled from filename or something, but let's offer explicit support because we can.
 components: # Defined using $t *only*, as I don't want to mess with deduplication without a full map of the type registry.
@@ -61,7 +67,10 @@ _max: 0.0
 # - If typed, store the type and data separately.
 # 
 # Examples to follow. (In the simplified variant, let's *not* make like an LLM and get our wires crossed...)
-$content:
+
+# Interesting to note: As far as I can tell, any component with a $content
+# has *no* other fields except its type. That'll help compact the YAML!
+$content: 
 	# Untyped, argument to a LocalizableGUID.
 	- GUID: something
     TargetComponent: Common.Components.DescriptionComponent
@@ -102,7 +111,7 @@ ShortName:
     # Argument to a "0" (Artitas.Core.Utils.Reference`1[[Artitas.Template, blah blah blah]]),
     # itself a piece of an element of a RecoveredItems.
     # This is a bad example because it's *basically* a component in a template, so I'll make another. :(
-    - Quantity:
+    - :Quantity:
         _min: 0.0
         _val: 1.0
         _max: Infinity
@@ -111,7 +120,7 @@ ShortName:
     # (... Okay, yes, I know the shape of this. Thing is, LLMs do this because they "forget" they did it already,
     # or because they want to be helpful; I do this because I'm reordering the doc on the fly and too lazy to make sure 
     # I've only mentioned it once. We are not the same. >:()
-    - Xenonauts.GroundCombat.Components.AutoHealAbilityDefinition:
+    - :Xenonauts.GroundCombat.Components.AutoHealAbilityDefinition:
         Range: 5
         PercentageOfDamageHealed: 0.5
         LineProjectilePrefab: GC-::-sfx/projectile/auto_heal-^default.prefab
@@ -123,3 +132,5 @@ ShortName:
 ```
 
 This format seems to aptly describe all possible children of a component too (e.g. prerequisites, selectors, etc.), but I won't be sure until I start coding.
+
+One caveat discovered while writing the Artitas exporter: I need a way to distinguish between objects-as-components and objects-as-structs. Hence, prefixing all component types with the `:` symbol.

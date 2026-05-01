@@ -1,0 +1,45 @@
+import { pickBy } from "lodash-es";
+
+const ARTITAS_TEMPLATE_REF_REGEX = /(?:(.*)-:-)?(.*)-::-(.*)/;
+const XENOYAML_TEMPLATE_REF_REGEX = /(?:([^%]*)%)?([^%]*)%([^%]*)/;
+
+function extractRef(regexResults) {
+    return pickBy({
+        // Of the three supported formats, this is the most convenient
+        // internal representation of an Artitas template reference.
+        pack: regexResults[1],
+        screen: regexResults[2],
+        path: regexResults[3]?.replace(/.json$/gi, ''),
+    })
+}
+
+export function parseTemplateReference(ref) {
+    const parsedRef = ref?.match(ARTITAS_TEMPLATE_REF_REGEX) || [];
+    return extractRef(parsedRef);
+}
+
+export function stringifyTemplateReference(ref, path) {
+    let result;
+    // As mentioned before, an object is the most convenient internal representation
+    // of a template reference, so let's make sure we're working with one.
+    if(typeof ref != "object") {
+        let parsedRef = ref.match(XENOYAML_TEMPLATE_REF_REGEX) || [];
+        if(!parsedRef.length)
+            parsedRef = ref.match(ARTITAS_TEMPLATE_REF_REGEX);
+        if(!parsedRef.length)
+            throw new TypeError(`Could not parse template reference ${ref} for file path ${path}!`);
+        ref = extractRef(parsedRef);
+    }
+
+    // Prevent inheriting from self!
+    if(!ref.pack && path.replace(/.json$/gi, '') == ref.path.replace(/.json$/gi, '')) {
+        ref.pack = "xenonauts";
+    }
+
+    // Artitas file references always end with a file extension!
+    // (Even when it is blindingly obvious what the extension must be.)
+    if(!ref.path.endsWith('.json'))
+        ref.path += '.json';
+
+    return `${ref.pack ? `${ref.pack}-:-` : ''}${ref.screen}-::-${ref.path}`;
+}
