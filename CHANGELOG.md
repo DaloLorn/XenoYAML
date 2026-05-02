@@ -24,3 +24,13 @@
 - Did a bit of refactoring (including taking a page out of my day job and installing ESLint and Prettier!)
 
 </details>
+
+## 0.3.0 (May 2nd, 2026)
+
+- **BREAKING:** The `path` metadata variable has been renamed to `$path` to improve type safety for the new `--mergeScreens` flag. You will need to reimport existing projects from JSON.
+- Fixed an issue where XenoYAML would overzealously strip siblings of `$content` nodes on import due to a mistaken assumption on my part.
+- While I was at it, tidied up the export transformer a bit to remove redundant logic.
+- Fixed the package entry point so `npm link` properly installs the package. I got so excited about finding out what was wrong with it earlier, I forgot to test if my latest fix worked...
+- Implemented `--mergeScreens` import flag, which generates a single unified YAML tree for all screens. The unified format is autodetected at export, so the flag isn't needed there.
+  - Due to safety concerns, this flag is currently automatically deactivated if XenoYAML can't find the content pack's `template` folder.
+- Implemented `--pretty` export flag, which formats the exported JSON with 2-space indentation for readability. This is not recommended for general use, as it slows template loading; you should prefer to use XenoYAML files as the authoritative source for editing or version control.

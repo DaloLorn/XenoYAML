@@ -1,14 +1,14 @@
 import { resolve as resolvePath, dirname, sep } from "path";
 import { parse } from "yaml";
 import { readFile, writeFile, mkdir } from "fs/promises";
-import { pickBy } from "lodash-es";
+import { map, pickBy } from "lodash-es";
 import readFiles from "../util/readFiles.js";
 import { stringifyComponents } from "../util/transformComponents.js";
 import { stringifyTemplateReference } from "../util/templateReferenceUtils.js";
 import batchOperation from "../util/batchOperation.js";
 
 export default async function exportToArtitas(options) {
-  const { outputFolder: customOutputFolder, args } = options;
+  const { outputFolder: customOutputFolder, pretty, args } = options;
   const project = args[0];
   let projectRoot = resolvePath(project);
   let projectFiles;
@@ -37,27 +37,45 @@ export default async function exportToArtitas(options) {
     // postFilter: isXenoYAML,
   });
 
-  projectFiles = projectFiles.map((parsedYaml) => {
-    const { parent, name, components, excluded, path } = parsedYaml;
-    const template = {
-      version: "0.1.0",
-      asset: pickBy({
-        Parent: stringifyTemplateReference(parent, path),
-        Name: name,
-        _components: stringifyComponents(components),
-        _excluded: stringifyComponents(excluded),
-        $t: "4",
-      }),
-      $t: "15",
-    };
+  // Helper to unpack merged (or otherwise nested) templates from the YML.
+  function parseTemplate(outerPrefix) {
+    return (xenoYAML, prefix) => {
+      if (typeof prefix !== "number")
+        prefix = `${outerPrefix ? `${outerPrefix}${sep}` : ""}${prefix}`;
+      else prefix = undefined;
+      if (!xenoYAML.$path) return map(xenoYAML, parseTemplate(prefix));
 
-    console.log(`Parsed ${path}.yml`);
-    return {
+      const { parent, name, components, excluded, $path } = xenoYAML;
+      const template = {
+        version: "0.1.0",
+        asset: pickBy({
+          Parent: stringifyTemplateReference(parent, $path),
+          Name: name,
+          _components: stringifyComponents(components),
+          _excluded: stringifyComponents(excluded),
+          $t: "4",
+        }),
+        $t: "15",
+      };
+      // Clean up inappropriate POSIX separators for neater output.
+      const path = `${prefix ? `${prefix}${sep}` : ""}${$path.replace("/", sep)}`;
+
+      console.log(
+        prefix
+          ? `Parsed ${prefix} entry from ${$path}.yml`
+          : `Parsed ${$path}.yml`,
+        template,
+        path,
+      );
       // We'll need the path to actually write the file into the right location.
-      template,
-      path,
+      return {
+        template,
+        path,
+      };
     };
-  });
+  }
+
+  projectFiles = projectFiles.map(parseTemplate()).flat();
 
   const outputFolder =
     customOutputFolder || resolvePath(xenoyamlRoot, "..", "template");
@@ -73,7 +91,7 @@ export default async function exportToArtitas(options) {
 
     await writeFile(
       path,
-      JSON.stringify(packedFile.template).replaceAll(
+      JSON.stringify(packedFile.template, undefined, pretty ? 2 : undefined).replaceAll(
         /([^\\]":\s*)"(-?Infinity)"/gi,
         "$1$2",
       ),

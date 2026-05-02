@@ -6,7 +6,7 @@ import {
 } from "path";
 import { stringify } from "yaml";
 import { writeFile, readFile, mkdir } from "fs/promises";
-import { pickBy } from "lodash-es";
+import { map, keyBy, groupBy, pickBy, values, forEach } from "lodash-es";
 import readFiles from "../util/readFiles.js";
 import isArtitasTemplate from "../util/isArtitasTemplate.js";
 import { parseComponents } from "../util/transformComponents.js";
@@ -15,6 +15,7 @@ import batchOperation from "../util/batchOperation.js";
 
 export default async function importFromArtitas(options) {
   const { outputFolder: customOutputFolder, args } = options;
+  let mergeScreens = options;
   const project = args[0];
   let projectRoot = resolvePath(project);
   let projectFiles;
@@ -30,8 +31,9 @@ export default async function importFromArtitas(options) {
   let templateRoot = projectRoot.match(templateRegex)[0];
   if (!templateRoot) {
     console.warn(
-      "Could not find content pack template folder! Paths in the resulting XenoYAML will be relative to the project root, instead.",
+      "Could not find content pack template folder! Paths in the resulting XenoYAML will be relative to the project root, instead. Note that this disables the --mergeScreens option, as it is no longer safe to use.",
     );
+    mergeScreens = false;
     templateRoot = dirname(projectRoot);
   }
 
@@ -89,20 +91,45 @@ export default async function importFromArtitas(options) {
     const result = pickBy({
       parent: parseTemplateReference(Parent),
       name: Name,
+      // Portability: Windows understands POSIX path separators,
+      // but most other OSes do not understand Windows separators, so
+      // let's only use POSIX separators in serialized data.
+      $path: parsedJson.path.replaceAll(sep, "/"),
       components,
       excluded,
-      path: parsedJson.path,
     });
-    console.log(`Parsed ${result.path}.json`);
+    console.log(`Parsed ${result.$path}.json`);
     return result;
   });
+
+  const screenlessPathRegex = /.*?\//i;
+  if (mergeScreens) {
+    projectFiles = map(
+      groupBy(projectFiles, (file) =>
+        file.$path.replace(screenlessPathRegex, ""),
+      ),
+      (group) => keyBy(group, (file) => file.$path.split("/")[0]),
+    );
+    projectFiles.map((group) =>
+      forEach(group, (file) => {
+        file.$path = file.$path.replace(screenlessPathRegex, "");
+      }),
+    );
+  }
 
   const outputFolder =
     customOutputFolder || resolvePath(templateRoot, "..", "xenoyaml");
   const writtenFolders = [outputFolder];
   await mkdir(outputFolder, { recursive: true });
   await batchOperation(projectFiles, async (parsedFile) => {
-    const path = `${outputFolder}${sep}${parsedFile.path}.yml`;
+    console.log(values(parsedFile)[0].$path);
+    const pathToFile = mergeScreens
+      ? values(parsedFile)[0].$path
+      : parsedFile.$path;
+
+    // ... We don't need to convert separators back to Windows,
+    // but it looks nicer this way.
+    const path = `${outputFolder}${sep}${pathToFile.replaceAll("/", sep)}.yml`;
     const folder = dirname(path);
     if (!writtenFolders.includes(folder)) {
       await mkdir(folder, { recursive: true });
@@ -110,7 +137,7 @@ export default async function importFromArtitas(options) {
     }
 
     await writeFile(path, stringify(parsedFile, { defaultKeyType: "PLAIN" }));
-    console.log(`Imported ${parsedFile.path}.yml`);
+    console.log(`Imported ${pathToFile}.yml`);
     imported = true;
   });
   if (!imported)

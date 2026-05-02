@@ -7,6 +7,7 @@ import {
   omit,
   map,
   size,
+  keys,
 } from "lodash-es";
 import {
   parseTemplateReference,
@@ -35,7 +36,7 @@ function parseComponent(data) {
 
   // 2. Handle Objects
   if (isPlainObject(data)) {
-    const { $type, $t, $content, ...rest } = data;
+    const { $type, $t, ...rest } = data;
     const type = TYPE_REGISTRY[$type] ?? $type ?? $t;
 
     if (type) {
@@ -45,8 +46,9 @@ function parseComponent(data) {
       if (type == "ar_Template")
         return { [prefixedType]: parseTemplateReference(data) };
 
-      if (!isUndefined($content)) {
-        return { [prefixedType]: parseComponent($content) };
+      const dataKeys = keys(rest);
+      if (dataKeys.length === 1 && dataKeys[0] === "$content") {
+        return { [prefixedType]: parseComponent(rest.$content) };
       }
       return {
         [prefixedType]: mapValues(rest, (value) => parseComponent(value)),
@@ -112,15 +114,13 @@ export function stringifyComponent(data) {
         };
       }
 
-      // If content is not an object, it's $content
-      if (!isPlainObject(reversedContent) && !isArray(reversedContent)) {
+      // If content is not an object, it's a simple scalar/array in $content.
+      if (!isPlainObject(reversedContent)) {
         return { $content: reversedContent, [typeProp]: originalType };
       }
 
-      // If it's an object, merge it. If it's anything else (Array, string, null), wrap it.
-      return isPlainObject(reversedContent)
-        ? { ...reversedContent, [typeProp]: originalType }
-        : { $content: reversedContent, [typeProp]: originalType };
+      // Otherwise we don't have a $content, or it's got siblings.
+      return { ...reversedContent, [typeProp]: originalType };
     }
 
     // Standard object (like "selector" wrapper which has no # prefix)
