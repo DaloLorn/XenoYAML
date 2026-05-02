@@ -1,5 +1,3 @@
-import { has } from "lodash-es";
-
 export default function isArtitasTemplate(parsedJson) {
     if(!!parsedJson.version && !!parsedJson.asset?.Name &&
         (parsedJson.asset.$t == "4" || parsedJson.asset.$type == "Artitas.Template") &&

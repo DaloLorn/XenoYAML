@@ -9,12 +9,18 @@ Right now, it can only import templates from YAML, but exporting is planned for 
 
 ## Installation
 1. Download or clone this repository.
-2. Open a shell window (Command Prompt, Bash, etc.) and run `npm install`.
+2. Open a shell window (Command Prompt, Bash, etc.) and run `npm install --production`.
+    - You can also run `npm link` afterwards, to enable its use as a global NPM package!
 3. Wait for the operation to complete.
 
 ## Running the application
-1. Open a shell window.
-2. Run `node xenoyaml` to bring up an up-to-date help message.
+If you haven't run `npm link` (see above):
+1. Open a shell window inside the repo's root folder (containing this readme).
+2. Run `node` to bring up an up-to-date help message.
+
+Otherwise:
+1. Open a shell window anywhere.
+2. Run `xenoyaml` to bring up an up-to-date help message.
 
 ## Format Documentation
 No formal documentation or samples exist at this time, but `analysis.md` contains some relevant ramblings of mine, and the output format should be largely self-explanatory to anyone with any familiarity with Artitas templates.

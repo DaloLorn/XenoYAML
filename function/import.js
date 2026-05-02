@@ -1,8 +1,7 @@
-import { resolve as resolvePath, join as joinPath, basename, dirname, sep, relative as relativize } from "path";
-import sanitize from "sanitize-filename";
-import { parse, stringify } from 'yaml';
-import { writeFile, stat, readFile, mkdir } from "fs/promises";
-import { find, forEach, map, toPlainObject, isArrayLike, values, pickBy, has } from "lodash-es";
+import { resolve as resolvePath, dirname, sep, relative as relativize } from "path";
+import { stringify } from 'yaml';
+import { writeFile, readFile, mkdir } from "fs/promises";
+import { pickBy } from "lodash-es";
 import readFiles from '../util/readFiles.js';
 import isArtitasTemplate from '../util/isArtitasTemplate.js';
 import { parseComponents } from '../util/transformComponents.js';
@@ -10,9 +9,8 @@ import { parseTemplateReference } from "../util/templateReferenceUtils.js";
 import batchOperation from '../util/batchOperation.js';
 
 export default async function importFromArtitas(options) {
-    const { outputFolder: customOutputFolder, mergeScreens, args } = options;
+    const { outputFolder: customOutputFolder, args } = options;
     const project = args[0];
-    const stats = await stat(project);
     let projectRoot = resolvePath(project);
     let projectFiles;
     let imported = false;
@@ -29,10 +27,9 @@ export default async function importFromArtitas(options) {
 
     projectFiles = await readFiles([projectRoot], {
         extension: '.json',
-        loader: async (filePath, filename) => {
+        loader: async (filePath, _filename) => {
             const relativePath = relativize(templateRoot, filePath);
-            const rawFile = await readFile(filePath, 'utf-8');
-            const parsedFile = JSON.parse(((await readFile(filePath, 'utf-8')).replaceAll(/([^\\])":(\s*-?)Infinity/g, "$1\": \"Infinity\"")).trim());
+            const parsedFile = JSON.parse(((await readFile(filePath, 'utf-8')).replaceAll(/([^\\])":\s*(-?)Infinity/g, "$1\": \"$2Infinity\"")).trim());
             return {
                 ...parsedFile,
                 path: relativePath.slice(0, -5)
@@ -40,10 +37,6 @@ export default async function importFromArtitas(options) {
         },
         postFilter: isArtitasTemplate,
     })
-    
-    if(stats.isFile()) {
-        projectRoot = dirname(projectRoot);
-    }
 
     /*// TODO: Figure out how to safely detect
     // and enforce mustHaveType on inner objects/arrays.
@@ -80,7 +73,7 @@ export default async function importFromArtitas(options) {
         //_components.forEach(parseComponent(components, true))
 
         const result = pickBy({
-            parent: parseTemplateReference(Parent?.$content),
+            parent: parseTemplateReference(Parent),
             name: Name,
             components,
             excluded,

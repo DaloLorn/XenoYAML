@@ -1,8 +1,11 @@
 {
-  "name": "XenoYAML",
-  "version": "0.0.1",
+  "name": "xenoyaml",
+  "version": "0.2.0",
   "description": "A set of tools allowing easier modification and versioning of the Artitas templates used by Xenonauts 2, using a YAML-based data model to store and transform the template's contents in a variety of ways not natively supported by Artitas.",
-  "main": "xenoyaml.js",
+  "main": "index.js",
+  "bin": {
+    "xenoyaml": "./index.js"
+  },
   "author": "DaloLorn",
   "license": "MIT",
   "dependencies": {
@@ -11,5 +14,13 @@
     "stdio": "^2.1.3",
     "yaml": "^2.8.3"
   },
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.3.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "globals": "^17.6.0",
+    "prettier": "^3.8.3"
+  }
 }

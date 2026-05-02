@@ -1,6 +1,7 @@
-import { isString } from "lodash-es";
+#!usr/bin/env node
 import { getopt } from "stdio";
 import importFromArtitas from "./function/import.js";
+import exportToArtitas from "./function/export.js";
 
 const options = getopt({
     import: {
@@ -18,12 +19,11 @@ const options = getopt({
 
 let abort = false;
 
+// eslint-disable-next-line no-unused-vars
 function exit(explanation) {
     console.error(explanation);
     abort = true;
 }
-
-if(!options.import) exit("Sorry, exporting isn't implemented yet! (Maybe tomorrow!)");
 
 if(!abort) {
     if(options.import) {

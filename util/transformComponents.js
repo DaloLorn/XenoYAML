@@ -1,4 +1,4 @@
-import { isArray, isPlainObject, mapValues, isUndefined, assign, keys } from 'lodash-es';
+import { isArray, isPlainObject, mapValues, isUndefined, assign, omit, map, size } from 'lodash-es';
 import { parseTemplateReference, stringifyTemplateReference } from './templateReferenceUtils.js';
 
 // As mentioned in the analysis doc, I need to differentiate between
@@ -14,10 +14,10 @@ const TYPE_REGISTRY = {
   "Common.Content.AssetReference`1[[Artitas.Template, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]": "ar_Template",
 }
 
-function transformNode(data) {
+function parseComponent(data) {
   // 1. Handle Arrays: Keep as arrays, but recurse on children
   if (isArray(data)) {
-    return data.map(item => transformNode(item));
+    return data.map(item => parseComponent(item));
   }
 
   // 2. Handle Objects
@@ -30,16 +30,16 @@ function transformNode(data) {
 
       // Special-case template refs.
       if(type == "ar_Template")
-        return { [prefixedType]: parseTemplateReference($content) };
+        return { [prefixedType]: parseTemplateReference(data) };
 
       if (!isUndefined($content)) {
-        return { [prefixedType]: transformNode($content) };
+        return { [prefixedType]: parseComponent($content) };
       }
       return { 
-        [prefixedType]: mapValues(rest, value => transformNode(value)) 
+        [prefixedType]: mapValues(rest, value => parseComponent(value)) 
       };
     }
-    return mapValues(rest, value => transformNode(value));
+    return mapValues(rest, value => parseComponent(value));
   }
 
   return data;
@@ -49,25 +49,24 @@ function transformNode(data) {
 // (the remnants of this failure can still be seen in import.js),
 // and ended up phoning Gemini for help when my blind eyes couldn't find the problem. :(
 export function parseComponents(data) {
-  if (!isArray(data)) return transformNode(data);
+  if (!isArray(data)) return parseComponent(data);
 
   // Collapse the root array into one object
   // transformNode(item) returns { "TypeName": { ...props } }
   // We merge all those objects into one.
   return data.reduce((acc, item) => {
-    return assign(acc, transformNode(item));
+    return assign(acc, parseComponent(item));
   }, {});
 }
 
 // ... By this point, I've straight-up given up mapping this by hand,
 // and coaxed Gemini into giving me a reverse transformer, too.
-export function stringifyComponents(data) {
+export function stringifyComponent(data) {
   if (isArray(data)) {
-    return data.map(item => reverseTransform(item));
+    return data.map(item => stringifyComponent(item));
   }
 
   if (isPlainObject(data)) {
-    const output = {};
     let typeKey = null;
 
     // Look for a key starting with our prefix
@@ -81,7 +80,7 @@ export function stringifyComponents(data) {
     if (typeKey) {
       const originalType = typeKey.substring(TYPE_PREFIX.length);
       const content = data[typeKey];
-      const reversedContent = reverseTransform(content);
+      const reversedContent = stringifyComponent(content);
 
       // Determine if we use $type or $t based on dots
       const typeProp = originalType.includes('.') ? '$type' : '$t';
@@ -90,13 +89,15 @@ export function stringifyComponents(data) {
       // into their XenoYAML files after I went to the trouble of stripping it out.
       // Luckily for the insane among us, I'm *juuuust* crazy enough
       // to conceive of the notion.
+      //
+      // Anyway, since ar_Template has a special parser, it needs a special stringifier...
       if((originalType[TYPE_REGISTRY] ?? originalType) == "ar_Template") {
-        return { [typeProp]: originalType, $content: stringifyTemplateReference(content) };
+        return { $content: stringifyTemplateReference(content), ...omit(content, ["pack", "screen", "path"]), [typeProp]: originalType };
       }
 
       // If content is not an object, it's $content
       if (!isPlainObject(reversedContent) && !isArray(reversedContent)) {
-        return { [typeProp]: originalType, $content: reversedContent };
+        return { $content: reversedContent, [typeProp]: originalType };
       }
 
       // If it's an object, merge it. If it's anything else (Array, string, null), wrap it.
@@ -106,8 +107,16 @@ export function stringifyComponents(data) {
     }
 
     // Standard object (like "selector" wrapper which has no # prefix)
-    return mapValues(data, value => reverseTransform(value));
+    return mapValues(data, value => stringifyComponent(value));
   }
 
   return data;
+}
+
+export function stringifyComponents(data) {
+  if(!size(data)) return;
+
+  return map(data, (component, type) => {
+    return stringifyComponent({ [type]: component })
+  })
 }
