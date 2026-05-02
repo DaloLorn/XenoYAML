@@ -1,5 +1,17 @@
-import { isArray, isPlainObject, mapValues, isUndefined, assign, omit, map, size } from 'lodash-es';
-import { parseTemplateReference, stringifyTemplateReference } from './templateReferenceUtils.js';
+import {
+  isArray,
+  isPlainObject,
+  mapValues,
+  isUndefined,
+  assign,
+  omit,
+  map,
+  size,
+} from "lodash-es";
+import {
+  parseTemplateReference,
+  stringifyTemplateReference,
+} from "./templateReferenceUtils.js";
 
 // As mentioned in the analysis doc, I need to differentiate between
 // YAML nodes created by compacting type identifiers,
@@ -11,35 +23,36 @@ const TYPE_PREFIX = ":";
 // Easy-but-tedious PR fodder, if anyone cares: Register *everything.*
 // (And probably extract it to its own file when you do.)
 const TYPE_REGISTRY = {
-  "Common.Content.AssetReference`1[[Artitas.Template, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]": "ar_Template",
-}
+  "Common.Content.AssetReference`1[[Artitas.Template, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]":
+    "ar_Template",
+};
 
 function parseComponent(data) {
   // 1. Handle Arrays: Keep as arrays, but recurse on children
   if (isArray(data)) {
-    return data.map(item => parseComponent(item));
+    return data.map((item) => parseComponent(item));
   }
 
   // 2. Handle Objects
   if (isPlainObject(data)) {
     const { $type, $t, $content, ...rest } = data;
     const type = TYPE_REGISTRY[$type] ?? $type ?? $t;
-    
+
     if (type) {
       const prefixedType = `${TYPE_PREFIX}${type}`;
 
       // Special-case template refs.
-      if(type == "ar_Template")
+      if (type == "ar_Template")
         return { [prefixedType]: parseTemplateReference(data) };
 
       if (!isUndefined($content)) {
         return { [prefixedType]: parseComponent($content) };
       }
-      return { 
-        [prefixedType]: mapValues(rest, value => parseComponent(value)) 
+      return {
+        [prefixedType]: mapValues(rest, (value) => parseComponent(value)),
       };
     }
-    return mapValues(rest, value => parseComponent(value));
+    return mapValues(rest, (value) => parseComponent(value));
   }
 
   return data;
@@ -63,7 +76,7 @@ export function parseComponents(data) {
 // and coaxed Gemini into giving me a reverse transformer, too.
 export function stringifyComponent(data) {
   if (isArray(data)) {
-    return data.map(item => stringifyComponent(item));
+    return data.map((item) => stringifyComponent(item));
   }
 
   if (isPlainObject(data)) {
@@ -73,7 +86,7 @@ export function stringifyComponent(data) {
     for (const key in data) {
       if (key.startsWith(TYPE_PREFIX)) {
         typeKey = key;
-        break; 
+        break;
       }
     }
 
@@ -83,7 +96,7 @@ export function stringifyComponent(data) {
       const reversedContent = stringifyComponent(content);
 
       // Determine if we use $type or $t based on dots
-      const typeProp = originalType.includes('.') ? '$type' : '$t';
+      const typeProp = originalType.includes(".") ? "$type" : "$t";
 
       // No sane person would deliberately inject the long form of ar_Template
       // into their XenoYAML files after I went to the trouble of stripping it out.
@@ -91,8 +104,12 @@ export function stringifyComponent(data) {
       // to conceive of the notion.
       //
       // Anyway, since ar_Template has a special parser, it needs a special stringifier...
-      if((originalType[TYPE_REGISTRY] ?? originalType) == "ar_Template") {
-        return { $content: stringifyTemplateReference(content), ...omit(content, ["pack", "screen", "path"]), [typeProp]: originalType };
+      if ((originalType[TYPE_REGISTRY] ?? originalType) == "ar_Template") {
+        return {
+          $content: stringifyTemplateReference(content),
+          ...omit(content, ["pack", "screen", "path"]),
+          [typeProp]: originalType,
+        };
       }
 
       // If content is not an object, it's $content
@@ -101,22 +118,22 @@ export function stringifyComponent(data) {
       }
 
       // If it's an object, merge it. If it's anything else (Array, string, null), wrap it.
-      return isPlainObject(reversedContent) 
+      return isPlainObject(reversedContent)
         ? { ...reversedContent, [typeProp]: originalType }
         : { $content: reversedContent, [typeProp]: originalType };
     }
 
     // Standard object (like "selector" wrapper which has no # prefix)
-    return mapValues(data, value => stringifyComponent(value));
+    return mapValues(data, (value) => stringifyComponent(value));
   }
 
   return data;
 }
 
 export function stringifyComponents(data) {
-  if(!size(data)) return;
+  if (!size(data)) return;
 
   return map(data, (component, type) => {
-    return stringifyComponent({ [type]: component })
-  })
+    return stringifyComponent({ [type]: component });
+  });
 }
