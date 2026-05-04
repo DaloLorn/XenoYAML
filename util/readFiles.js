@@ -41,6 +41,7 @@ export default async function readFiles(paths, options) {
             );
             if (postFilter(result)) return result;
           },
+          true,
         );
       } else if (stats.isFile()) {
         const result = await loader(

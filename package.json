@@ -1,6 +1,6 @@
 {
   "name": "xenoyaml",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "description": "A set of tools allowing easier modification and versioning of the Artitas templates used by Xenonauts 2, using a YAML-based data model to store and transform the template's contents in a variety of ways not natively supported by Artitas.",
   "main": "index.js",
   "bin": {
@@ -12,7 +12,8 @@
     "lodash-es": "^4.18.1",
     "sanitize-filename": "^1.6.4",
     "stdio": "^2.1.3",
-    "yaml": "^2.8.3"
+    "yaml": "^2.8.3",
+    "yargs": "^18.0.0"
   },
   "type": "module",
   "devDependencies": {
