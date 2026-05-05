@@ -1,7 +1,12 @@
 # XenoYAML
-Xenonauts 2 modding tool designed to simplify editing of the game's entity templates by converting them into a more legible, (eventually) more flexible YAML-based format.
+Xenonauts 2 modding tool designed to simplify editing of the game's entity templates by converting them into a more legible, more flexible YAML-based format.
 
-Right now, it can only import templates from YAML, but exporting is planned for an imminent update.
+Right now, it has the following capabilities (as of 0.4.0):
+- Importing Artitas projects up to (and presumably exceeding) the size of the all_templates zip (tested in 7.19.4)
+- Merging across screen boundaries at import
+- Limited DRY support via YAML anchors and merge keys
+- Limited support for automatic recursive merging of two YAML trees
+- Exporting the project back to Artitas-compatible JSON
 
 ## System Requirements
 - Just about any consumer-grade operating system of the past... 30 years or so?
@@ -23,7 +28,7 @@ Otherwise:
 2. Run `xenoyaml` to bring up an up-to-date help message.
 
 ## Format Documentation
-No formal documentation or samples exist at this time, but `analysis.md` contains some relevant ramblings of mine, and the output format should be largely self-explanatory to anyone with any familiarity with Artitas templates.
+No formal documentation exists at this time, but `analysis.md` contains some relevant ramblings of mine. Additionally, the `manual` command can provide detailed explanations of each of the XenoYAML tools, and I've converted [Xeno2-PlayableServitors](https://github.com/DaloLorn/Xeno2-PlayableServitors) into a high-grade XenoYAML sample project (in addition to all the other things it was doing).
 
 A few notable deviations from Artitas:
 - No explicit `$type`/`$t` values.
