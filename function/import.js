@@ -134,7 +134,10 @@ async function handler(options) {
 
     await writeFile(
       path,
-      stringify({ $schema: "0.4.0", parsedFile }, { defaultKeyType: "PLAIN" }),
+      stringify(
+        { $schema: "0.4.0", ...parsedFile },
+        { defaultKeyType: "PLAIN" },
+      ),
     );
     console.log(`Imported ${pathToFile}.yml`);
     imported = true;

@@ -61,3 +61,7 @@
 - Added a `$schema` field to denote schema versions, as I'm deathly afraid of the logistical implications of my tendency to suddenly make backwards-incompatible changes to the XenoYAML schema. Should there be any more changes, a migration tool will be provided to update old projects without reimporting.
   - Newly imported files will have `$schema: 0.4.0` automatically injected at the top of the file.
 - Fixed an issue where the exporter wasn't correctly cleaning up path separators for its log messages.
+
+### 0.4.1 (Max 9th, 2026)
+
+- Fixed an oversight that was causing the importer to prepend `parsedFile` to all imported file paths (which would thus cause the exporter to erroneously export to `parsedFile/so/and/so.json`).
