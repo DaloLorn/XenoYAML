@@ -165,3 +165,29 @@ strategy:
 ```
 
 </details>
+
+### 0.5.1 (May 10th, 2026)
+
+- Fixed an order-of-operations issue which prevented builder template overrides. 
+  - As a reminder, because I ran afoul of *that* too: Overriding the template needs you to match its *entire* YAML tree right down to the fields you wanted to change. (Examples below are based on the Playable Servitors repo.)
+
+<details>
+
+<summary>Example</summary>
+
+```yaml
+  # This is wrong - at best, the new Variant will be ignored!
+  $HasTechs:
+    Variant: Cost
+    $techs:
+      # Insert costs here
+
+  # This is the correct style, overriding the generated object.
+  $HasTechs:
+    :ADelegatePq:
+      Variant: Cost
+    $techs:
+      # Insert costs here
+```
+
+</details>

@@ -120,7 +120,7 @@ export function evaluateBuilders(data, builders = {}) {
         const cleanOverrides = evaluateBuilders(rawOverrides, builders);
 
         // Merge the builder result into our result collector
-        mergeWith(result, cleanOverrides, hydrated, safeMerge);
+        mergeWith(result, hydrated, cleanOverrides, safeMerge);
       } else {
         // --- STANDARD DATA ---
         // Recurse on the value and assign it to the result
