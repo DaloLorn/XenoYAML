@@ -62,6 +62,106 @@
   - Newly imported files will have `$schema: 0.4.0` automatically injected at the top of the file.
 - Fixed an issue where the exporter wasn't correctly cleaning up path separators for its log messages.
 
-### 0.4.1 (Max 9th, 2026)
+### 0.4.1 (May 9th, 2026)
 
 - Fixed an oversight that was causing the importer to prepend `parsedFile` to all imported file paths (which would thus cause the exporter to erroneously export to `parsedFile/so/and/so.json`).
+
+## 0.5.0 (May 10th, 2026)
+
+- Fixed a typo in the changelog that said 0.4.1 was released on *Max 9th*. :man_facepalming:
+- Added a new `$builders` field, for when YAML aliases inevitably prove inadequate!
+  - Builders are essentially parameterized objects, and are evaluated immediately after aliases.
+    - This may encourage you to use aliases in your builder definitions. I feel a sense of morbid curiosity regarding the outcomes.
+  - Builders are only evaluated in the `components` and `excluded` contexts. Anywhere else, they have no effect.
+  - Builders are loaded into a global pool from all files in the project.
+    - This has the side effect of making no-arg builders usable as global aliases.
+    - This does not *currently* obey project root inference: Only those files being exported will contribute their builders to the export.
+      - A fix for this will be included in a later release when my brain is a little less fried. Until then, please either define all your builders in the files or folders that are using them, or make sure to always export your entire XenoYAML project at once!
+  - Each builder name must start with the `$` prefix.
+  - Builders may contain an `$args` array with argument names. These arguments will then be mapped onto the template.
+  - Builders must contain a YAML subtree (I advise objects, but I will neither confirm nor deny the feasibility of array builders) to serve as a template.
+  - The contents of the builder template can be overridden at runtime by passing a non-arg subtree to the builder.
+  - Unless I am mistaken, the contents of the template can also be overridden by providing a sibling subtree with the same structure as the template.
+
+<details>
+
+<summary>Example Usage</summary>
+
+```yaml
+$builders:
+  $NoLocale:
+    :LocalizableGUID: []
+  $HasTechs:
+    $args: # The $args array is never merged into the subtree.
+      - $techs
+    # Interestingly, a builder could probably return multiple objects, like an alias.
+    # (I haven't tried it yet.)
+    #
+    # This is not always advisable: Some builders like $HasTechs here
+    # might be invoked in an array context (as opposed to the component dictionary),
+    # resulting in deformed objects.
+    :ADelegatePq:
+      Operator: All
+      Number: 0
+      selector:
+        :PlayerSe:
+          Player: xenonauts
+      Variant: Unlocks
+      modifierStorage: null
+      prerequisites: $techs # The value of `prerequisites` will be set to whatever is passed to $techs at runtime - see the sample tech below.
+  $HasTech:
+    $args:
+      - $pack
+      - $tech
+    :ProjectPq:
+      Project:
+        :ar_Template:
+          # Noteworthy behavior: Omitting an argument will omit its associated field.
+          # (This is probably only ever safe for :ar_Template, when I think about it...)
+          # Anyway, in this context, we don't *generally* need a content pack,
+          # but what if we ever do?
+          #
+          # Funnily, a $TemplateRef builder could be created
+          # to build template refs anywhere in the project...
+          pack: $pack 
+          screen: ST
+          path: $tech
+      Status: Finished
+      Variant: Unlocks
+      modifierStorage: null
+
+strategy:
+  projects/research:
+    vehicle_servitor_heavy:
+      parent:
+        screen: ST
+        path: masters/projects/research/research_duration1
+      name: vehicle_servitor_heavy
+      $path: ""
+      components:
+        $NoLocale: {} # No-arg builders still need to be invoked with an object!
+        :Description: Intensive study of the aliens' Heavy
+          Servitor drones, aimed at advancing our Servitor reconstruction protocols.
+        :Name: Heavy Servitor Reconstruction
+        :Prerequisites:
+          
+          # Let's break this down a bit:
+          # The $HasTechs builder specifies that the player (via :PlayerSe)
+          # must meet all of the prerequisites outlined in the $techs array.
+          # Then, $techs contains an array of $HasTech builder calls,
+          # each of which specifies that a project must be completed.
+          #
+          # This makes $HasTechs a bit of a misnomer, because :PlayerSe
+          # is also the selector used to check if you have money or OP.
+          # But never mind that.
+          - $HasTechs:
+              $techs:
+                - $HasTech:
+                    $tech: projects/research/vehicle_servitor
+                - $HasTech: 
+                    $tech: projects/research/alien_weapons_fusion
+                - $HasTech:
+                    $tech: projects/research/abstract_alien_antigrav_emitter
+```
+
+</details>

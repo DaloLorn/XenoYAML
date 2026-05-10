@@ -6,6 +6,9 @@ import readFiles from "../util/readFiles.js";
 import { stringifyComponents } from "../util/transformComponents.js";
 import { stringifyTemplateReference } from "../util/templateReferenceUtils.js";
 import batchOperation from "../util/batchOperation.js";
+import { importBuilders, evaluateBuilders } from "../util/buildComponents.js";
+
+const METADATA = ["$aliases", "$schema", "$builders"];
 
 const command = {
   command: "* <project>",
@@ -46,7 +49,7 @@ async function handler(options) {
   let xenoyamlRoot = projectRoot.match(xenoyamlRegex)[0];
   if (!xenoyamlRoot) {
     console.warn(
-      "Could not find content pack XenoYAML folder! Paths in the resulting templates will be relative to the project root, instead.",
+      "Could not find content pack XenoYAML folder! Paths in the resulting templates will be relative to the project root, instead.\n",
     );
     xenoyamlRoot = dirname(projectRoot);
   }
@@ -64,11 +67,24 @@ async function handler(options) {
     // postFilter: isXenoYAML,
   });
 
+  console.log("\nReading builders...\n");
+  const builders = {};
+  let buildersSafe = true;
+  projectFiles.forEach(({ $builders }) => {
+    buildersSafe &&= importBuilders($builders, builders);
+  });
+  if (!buildersSafe) {
+    console.error(
+      "Encountered errors while reading builders from the project! Please fix them and try again!",
+    );
+    return;
+  }
+
   // Helper to unpack merged (or otherwise nested) templates from the YML.
   function parseTemplate(outerPrefix) {
     return (xenoYAML, prefix) => {
       // Don't bother unpacking the XenoYAML metadata!
-      if (["$aliases", "$schema"].includes(prefix)) return;
+      if (METADATA.includes(prefix)) return;
 
       if (typeof prefix !== "number")
         prefix = `${outerPrefix ? `${outerPrefix}${sep}` : ""}${prefix}`;
@@ -90,8 +106,10 @@ async function handler(options) {
         asset: pickBy({
           Parent: stringifyTemplateReference(parent, path.replaceAll(sep, "/")),
           Name: name,
-          _components: stringifyComponents(components),
-          _excluded: stringifyComponents(excluded),
+          _components: stringifyComponents(
+            evaluateBuilders(components, builders),
+          ),
+          _excluded: stringifyComponents(evaluateBuilders(excluded, builders)),
           $t: "4",
         }),
         $t: "15",
@@ -111,6 +129,7 @@ async function handler(options) {
   }
 
   projectFiles = projectFiles.map(parseTemplate()).flat(Infinity);
+  console.log();
 
   const outputFolder =
     customOutputFolder || resolvePath(xenoyamlRoot, "..", "template");
