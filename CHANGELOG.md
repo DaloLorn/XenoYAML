@@ -191,3 +191,12 @@ strategy:
 ```
 
 </details>
+
+## 0.6.0 (May 16th, 2026)
+
+- XenoYAML now throws an error when trying to export a template with non-component objects inside a component block (e.g. if you forgot to prefix your types, or maybe invoked a nonexistent builder in the handful of places XenoYAML would know how to detect it).
+- Fixed an issue where trying to export a longform `ar_Template` (no, I'm not going to copy-paste that monster in here, go read `util/transformComponents::TYPE_REGISTRY` if you want to) would not correctly invoke the `ar_Template` stringifier.
+  - I have no idea what was wrong with me when I wrote the original code for that.
+- Added a very, very limited form of strong typing, currently revolving around parsing nested templates, allowing XenoYAML to more compactly deserialize the following C# types:
+  - `Reference<Template>` (longform monstrous, shortform `0`)
+  - `PackContents` (longform `Common.Parcels.Components.PackContentsComponent`)

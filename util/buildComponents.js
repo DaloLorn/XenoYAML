@@ -73,7 +73,9 @@ function safeMerge(objValue, srcValue) {
   return undefined;
 }
 
-export function evaluateBuilders(data, builders = {}) {
+export function evaluateBuilders(data, builders) {
+  if (!builders) return data;
+
   if (isArray(data)) {
     return data.map((item) => evaluateBuilders(item, builders));
   }

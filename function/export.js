@@ -1,12 +1,11 @@
 import { resolve as resolvePath, dirname, sep } from "path";
 import { parse } from "yaml";
 import { readFile, writeFile, mkdir } from "fs/promises";
-import { map, pickBy, isUndefined } from "lodash-es";
+import { map, pickBy, isUndefined, identity } from "lodash-es";
 import readFiles from "../util/readFiles.js";
-import { stringifyComponents } from "../util/transformComponents.js";
-import { stringifyTemplateReference } from "../util/templateReferenceUtils.js";
+import { stringifyTemplate } from "../util/transformComponents.js";
 import batchOperation from "../util/batchOperation.js";
-import { importBuilders, evaluateBuilders } from "../util/buildComponents.js";
+import { importBuilders } from "../util/buildComponents.js";
 
 const METADATA = ["$aliases", "$schema", "$builders"];
 
@@ -80,6 +79,7 @@ async function handler(options) {
     return;
   }
 
+  const errors = [];
   // Helper to unpack merged (or otherwise nested) templates from the YML.
   function parseTemplate(outerPrefix) {
     return (xenoYAML, prefix) => {
@@ -92,7 +92,7 @@ async function handler(options) {
       if (isUndefined(xenoYAML.$path))
         return map(xenoYAML, parseTemplate(prefix));
 
-      const { parent, name, components, excluded, $path } = xenoYAML;
+      const { $path } = xenoYAML;
       // Clean up inappropriate POSIX separators for neater output.
       // Also, merge the prefix into the path for correct generation
       // of parent refs and output paths.
@@ -101,34 +101,43 @@ async function handler(options) {
           ? prefix.replaceAll("/", sep)
           : `${prefix ? `${prefix}${sep}` : ""}${$path}`.replaceAll("/", sep);
 
-      const template = {
-        version: "0.1.0",
-        asset: pickBy({
-          Parent: stringifyTemplateReference(parent, path.replaceAll(sep, "/")),
-          Name: name,
-          _components: stringifyComponents(
-            evaluateBuilders(components, builders),
-          ),
-          _excluded: stringifyComponents(evaluateBuilders(excluded, builders)),
-          $t: "4",
-        }),
-        $t: "15",
-      };
+      try {
+        const template = {
+          version: "0.1.0",
+          asset: pickBy({
+            ...stringifyTemplate(xenoYAML, path, builders),
+            $t: "4",
+          }),
+          $t: "15",
+        };
 
-      console.log(
-        prefix
-          ? `Parsed ${prefix.replaceAll("/", sep)} entry from ${$path}.yml`
-          : `Parsed ${$path}.yml`,
-      );
-      // We'll need the path to actually write the file into the right location.
-      return {
-        template,
-        path,
-      };
+        console.log(
+          prefix
+            ? `Parsed ${prefix.replaceAll("/", sep)} entry from ${$path}.yml`
+            : `Parsed ${$path}.yml`,
+        );
+        // We'll need the path to actually write the file into the right location.
+        return {
+          template,
+          path,
+        };
+      } catch (e) {
+        if (e instanceof SyntaxError) {
+          errors.push(
+            prefix
+              ? `Error parsing ${prefix.replaceAll("/", sep)} entry from ${$path}.yml: ${e.message}`
+              : `Error parsing ${$path}.yml: ${e.message}`,
+          );
+          return;
+        }
+      }
     };
   }
 
-  projectFiles = projectFiles.map(parseTemplate()).flat(Infinity);
+  projectFiles = projectFiles
+    .map(parseTemplate())
+    .flat(Infinity)
+    .filter(identity);
   console.log();
 
   const outputFolder =
@@ -161,6 +170,11 @@ async function handler(options) {
     console.error(
       "No importable files were found. Please make sure the provided path contains valid XenoYAML files.",
     );
+  if (errors.length) {
+    console.error(
+      `Encountered errors during export:\n\n- ${errors.join("\n- ")}\n\nPlease correct these and run the exporter again.`,
+    );
+  }
 }
 
 const userManual = `Attempts to export a XenoYAML file or folder to Artitas JSON files. As the most important XenoYAML tool, this is also the default command.

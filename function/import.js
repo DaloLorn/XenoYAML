@@ -9,7 +9,7 @@ import { writeFile, readFile, mkdir } from "fs/promises";
 import { map, keyBy, groupBy, pickBy, values, forEach } from "lodash-es";
 import readFiles from "../util/readFiles.js";
 import isArtitasTemplate from "../util/isArtitasTemplate.js";
-import { parseComponents } from "../util/transformComponents.js";
+import { parseComponents, parseTemplate } from "../util/transformComponents.js";
 import { parseTemplateReference } from "../util/templateReferenceUtils.js";
 import batchOperation from "../util/batchOperation.js";
 
@@ -81,20 +81,7 @@ async function handler(options) {
   });
 
   projectFiles = projectFiles.map((parsedJson) => {
-    const { Parent, Name, _components, _excluded } = parsedJson.asset;
-    const components = parseComponents(_components);
-    const excluded = parseComponents(_excluded);
-
-    const result = pickBy({
-      parent: parseTemplateReference(Parent),
-      name: Name,
-      // Portability: Windows understands POSIX path separators,
-      // but most other OSes do not understand Windows separators, so
-      // let's only use POSIX separators in serialized data.
-      $path: parsedJson.path.replaceAll(sep, "/"),
-      components,
-      excluded,
-    });
+    const result = parseTemplate(parsedJson.asset, parsedJson.path);
     console.log(`Parsed ${result.$path}.json`);
     return result;
   });

@@ -1,9 +1,11 @@
-import { pickBy } from "lodash-es";
+import { keys, pickBy } from "lodash-es";
 
 const ARTITAS_TEMPLATE_REF_REGEX = /(?:(.*)-:-)?(.*)-::-(.*)/;
 const XENOYAML_TEMPLATE_REF_REGEX = /(?:([^%]*)%)?([^%]*)%([^%]*)/;
 
 function extractRef(regexResults, ref) {
+  if (!regexResults.length && !keys(ref).length) return;
+
   return pickBy(
     {
       // Of the three supported formats, this is the most convenient
@@ -28,7 +30,7 @@ export function parseTemplateReference(ref) {
 export function stringifyTemplateReference(ref, path) {
   // It occurs to me that some XenoYAML templates have no parents,
   // usually because they were imported from a parentless Artitas template...
-  if (!ref.path) return "";
+  if (!ref) return {};
 
   // As mentioned before, an object is the most convenient internal representation
   // of a template reference, so let's make sure we're working with one.
@@ -42,25 +44,26 @@ export function stringifyTemplateReference(ref, path) {
     ref = extractRef(parsedRef);
   }
 
+  let { path: refPath, screen, pack, ...rest } = ref;
+
   // If it's a parent path, prevent inheriting from self!
   if (
     !!path &&
-    !ref.pack &&
-    path.replace(/.json$/gi, "") == ref.path.replace(/.json$/gi, "")
+    !pack &&
+    path.replace(/.json$/gi, "").replace(/([^/]*\/)/i, "") ==
+      refPath.replace(/.json$/gi, "")
   ) {
-    ref.pack = "xenonauts";
+    pack = "xenonauts";
   }
 
   // Artitas file references always end with a file extension!
   // (Even when it is blindingly obvious what the extension must be.)
-  if (!ref.path.endsWith(".json")) ref.path += ".json";
+  if (!refPath.endsWith(".json")) refPath += ".json";
 
-  const result = `${ref.pack ? `${ref.pack}-:-` : ""}${ref.screen}-::-${ref.path}`;
-  if (!path) return result;
-
-  // Special handling for template parents, because I feel better putting it here.
+  const result = `${pack ? `${pack}-:-` : ""}${screen}-::-${refPath}`;
   return {
     $content: result,
-    $t: "ar_Template",
+    ...rest,
+    ...(!!path && { $t: "ar_Template" }),
   };
 }
