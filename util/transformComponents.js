@@ -160,7 +160,8 @@ export function stringifyTemplate(data, path, builders) {
       (path || "").replaceAll(sep, "/"),
     ),
     Name: name,
-    _components: stringifyComponents(evaluateBuilders(components, builders)),
+    _components:
+      stringifyComponents(evaluateBuilders(components, builders)) || [],
     _excluded: stringifyComponents(evaluateBuilders(excluded, builders)),
     ...rest,
   });
@@ -203,7 +204,7 @@ function parseComponent(data) {
 // ... I got tangled up trying to correctly handle inner objects/arrays,
 // and ended up phoning Gemini for help when my blind eyes couldn't find the problem. :(
 export function parseComponents(data) {
-  if (!isArray(data)) return parseComponent(data);
+  if (!data?.length) return;
 
   // Collapse the root array into one object
   // transformNode(item) returns { "TypeName": { ...props } }

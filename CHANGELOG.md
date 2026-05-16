@@ -200,3 +200,11 @@ strategy:
 - Added a very, very limited form of strong typing, currently revolving around parsing nested templates, allowing XenoYAML to more compactly deserialize the following C# types:
   - `Reference<Template>` (longform monstrous, shortform `0`)
   - `PackContents` (longform `Common.Parcels.Components.PackContentsComponent`)
+
+### 0.6.1 (May 16th, 2026)
+
+- Fixed a couple of issues with exporting `ar_Template`s that cropped up while upgrading Unification War's XenoYAML project:
+  - When exporting a nested template, the parent will no longer be coerced to `{}` if none exists.
+  - The type specifier is correctly emitted again when exporting nested `ar_Template`s.
+- Fixed an issue where exporting a template with an empty or nonexistent `components` map would result in a game crash. (`_components` is not nullable, apparently!)
+- Fixed an issue where the importer would import empty `_components` arrays into unnecessary empty maps.

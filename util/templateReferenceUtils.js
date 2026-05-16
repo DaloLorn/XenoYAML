@@ -30,7 +30,7 @@ export function parseTemplateReference(ref) {
 export function stringifyTemplateReference(ref, path) {
   // It occurs to me that some XenoYAML templates have no parents,
   // usually because they were imported from a parentless Artitas template...
-  if (!ref) return {};
+  if (!ref) return undefined;
 
   // As mentioned before, an object is the most convenient internal representation
   // of a template reference, so let's make sure we're working with one.
@@ -64,6 +64,6 @@ export function stringifyTemplateReference(ref, path) {
   return {
     $content: result,
     ...rest,
-    ...(!!path && { $t: "ar_Template" }),
+    $t: "ar_Template",
   };
 }
