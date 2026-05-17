@@ -208,3 +208,20 @@ strategy:
   - The type specifier is correctly emitted again when exporting nested `ar_Template`s.
 - Fixed an issue where exporting a template with an empty or nonexistent `components` map would result in a game crash. (`_components` is not nullable, apparently!)
 - Fixed an issue where the importer would import empty `_components` arrays into unnecessary empty maps.
+
+## 0.7.0 (May 17th, 2026)
+
+- Builder definitions now accept an `$args` string containing the name of their only argument. (As opposed to only accepting arrays of argument names.)
+- Builder invocations now accept scalars and arrays (e.g. `$IsSpecies: servitor` instead of `$IsSpecies: { $species: servitor }`), as long as the builder only accepts one argument.
+  - Note that this feature will result in unwanted behavior if you try to use a template override when not passing an argument to a single-arg builder. To avoid this, add `$noArg: true` to your override.
+  - Attempting to pass a scalar or array to a multi-arg builder will immediately throw an error.
+- Fixed an oversight where, for no good reason that I can think of, I didn't check builder names against the reserved keyword list.
+- Greatly expanded the list of reserved builder/argument names to prevent the above features from conflicting with serialized game data. Hopefully nobody was using these:
+  - `$content` (was already reserved in 0.5.0 as a precaution against `$content` objects in game data, but still!)
+  - `$ref`
+  - `$valuetype`
+  - `$valuetypekey`
+  - `$valueid`
+  - `$valuereference`
+  - `$type`
+  - `$t`

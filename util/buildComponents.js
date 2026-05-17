@@ -11,15 +11,31 @@ import {
 } from "lodash-es";
 
 // Reasons for reservation:
-// - While $content is never a plain object in my Artitas bulk import,
-//   it's a common enough key that Goldhawk *might* make an object $content
-//   someday, so preemptively catching it.
+// - $content is *only* the single most common $ key in Xenonauts 2.
 // - $args is part of the builder definition, and I'm feeling paranoid
 //   enough not to contradict Gemini's assumption here.
 // - $path is used to figure out which subtrees are actually mappable to
 //   Artitas templates. Terrible things would likely happen if I let you
 //   inject it willy-nilly into a XenoYAML template.
-const RESERVED = ["$content", "$args", "$path"];
+// - $noArg tells a single-arg builder that, if the argument is not provided,
+//   the other data passed to it is a template override and not the argument
+//   value.
+// - All the other reserved keys added in 0.7.0 are used by the game's Artitas
+//   serializer. Since objects are no longer the only acceptable argument
+//   to a builder, I have to guard against all of them now (or try to).
+const RESERVED = [
+  "$content",
+  "$args",
+  "$path",
+  "$noArg",
+  "$ref",
+  "$valuetype",
+  "$valuetypekey",
+  "$valueid",
+  "$valuereference",
+  "$type",
+  "$t",
+];
 const PREFIX = "$";
 
 // Returns a Boolean to let us know if it's safe to continue exporting.
@@ -31,12 +47,18 @@ export function importBuilders(source, registry) {
         `Builder name "${name}" is not legal! All builder names must start with "${PREFIX}".`,
       );
       result = false;
+    } else if (RESERVED.includes(name)) {
+      console.error(
+        `Builder name "${name}" is a reserved keyword! (Reserved names: "${RESERVED.join('", "')}")`,
+      );
     } else if (has(registry, name)) {
       console.error(
         `Builder name "${name}" is defined multiple times throughout the project! `,
       );
       result = false;
     } else registry[name] = definition;
+    if (definition.$args && typeof definition.$args == "string")
+      definition.$args = [definition.$args];
 
     if (definition.$args && !isArray(definition.$args)) {
       console.error(`Builder "${name}": $args must be an array if specified!`);
@@ -50,7 +72,7 @@ export function importBuilders(source, registry) {
           result = false;
         } else if (RESERVED.includes(arg)) {
           console.error(
-            `Builder "${name}": Argument name "${arg}" is reserved! (Reserved names: "${RESERVED.join('", "')}")`,
+            `Builder "${name}": Argument name "${arg}" is a reserved keyword! (Reserved names: "${RESERVED.join('", "')}")`,
           );
           result = false;
         }
@@ -87,20 +109,31 @@ export function evaluateBuilders(data, builders) {
     for (const key in data) {
       const value = data[key];
 
-      if (
-        // Builder calls can never be scalars or arrays,
-        // so we can keep the reserved keyword list
-        // relatively slim without clashing with Artitas data.
-        // If I'd been smarter, I might have thought of a different
-        // builder prefix that didn't clash with Artitas,
-        // existing XenoYAML, or YAML syntax...
-        isPlainObject(value) &&
-        builders[key]
-      ) {
+      if (key.startsWith(PREFIX) && builders[key]) {
         // --- EXECUTE BUILDER ---
         const builder = builders[key];
-        const userParams = value;
+        let userParams = value;
         const { $args, ...template } = builder;
+
+        // Shorthand invocation:
+        // If the argument map isn't a map (or doesn't contain the argument key),
+        // then it must be the argument itself!
+        if ($args?.length === 1) {
+          const singleArgName = $args[0];
+
+          if (userParams?.$noArg) {
+            delete userParams.$noArg;
+          } else if (
+            !isPlainObject(userParams) ||
+            !(singleArgName in userParams)
+          ) {
+            userParams = { [singleArgName]: userParams };
+          }
+        } else if ($args?.length && !isPlainObject(userParams)) {
+          throw new SyntaxError(
+            `Attempted to pass a scalar or array to a multi-arg builder! ${key} received the payload "${userParams}"`,
+          );
+        }
 
         // Map arguments (unbound become undefined)
         const argValues = {};
