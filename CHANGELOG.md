@@ -225,3 +225,14 @@ strategy:
   - `$valuereference`
   - `$type`
   - `$t`
+
+## 0.8.0 (May 20th, 2026)
+
+- Added a new reserved builder/argument name: `$none`. Keep reading for why this is the case!
+  - (Also, since I notice I never actually *said so* in the patch notes for 0.7.0: `$noArg` is a reserved keyword too.)
+- Added support for default argument values. These are defined as `$name: defaultValue` (e.g. `$args: $species: servitor` would specify the builder accepts a single `$species` arg with the default value of `servitor`), and accept any data type accepted by a normal argument.
+  - In order to disambiguate between "required" arguments and optional arguments with a default value of `undefined`, the latter is defined as having a default value of `$none`.
+    - XenoYAML still does not (and is never planned to) check whether a required argument is actually provided, so "required" is a bit of a misnomer here.
+  - Default values can refer to another argument value, using its own default if appropriate. (For instance, I've defined a `$Range` which accepts optional `$min` and `$max` values but defaults them to `$val`. In another builder, I defaulted an argument to another argument which was itself defaulting to 1, and it works too!)
+    - At this time, XenoYAML makes no attempt whatsoever to validate the default value. References to nonexistent arguments, or circular references between arguments, are left to the modder to avoid.
+- Shorthand builder invocation now accepts any number of optional arguments (as defined above: arguments with a default value) in addition to the one argument being provided.
