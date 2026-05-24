@@ -30,6 +30,8 @@ import {
 //   This is distinct from not specifying a default, in that
 //   it allows a multi-arg builder to be conditionally treated as a
 //   single-arg builder.
+// - $template allows a builder template to be explicitly defined,
+//   permitting the creation of array builders.
 const RESERVED = [
   "$content",
   "$args",
@@ -43,6 +45,7 @@ const RESERVED = [
   "$type",
   "$t",
   "$none",
+  "$template",
 ];
 const PREFIX = "$";
 
@@ -145,7 +148,7 @@ export function evaluateBuilders(data, builders) {
         // --- EXECUTE BUILDER ---
         const builder = builders[key];
         let userParams = value;
-        const { $args, ...template } = builder;
+        const { $args, $template, ...template } = builder;
 
         // This is a bit of a misnomer - XenoYAML does not,
         // and does not *want to*, check whether all the args are defined...
@@ -191,9 +194,12 @@ export function evaluateBuilders(data, builders) {
           });
         }
 
+        // Array templates need an array result.
+        if (isArray($template)) result = [];
+
         // Hydrate the template
         let hydrated = hydrateTemplate(
-          cloneDeep(template),
+          cloneDeep($template ?? template),
           argValues,
           builders,
         );

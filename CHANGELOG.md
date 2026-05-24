@@ -236,3 +236,8 @@ strategy:
   - Default values can refer to another argument value, using its own default if appropriate. (For instance, I've defined a `$Range` which accepts optional `$min` and `$max` values but defaults them to `$val`. In another builder, I defaulted an argument to another argument which was itself defaulting to 1, and it works too!)
     - At this time, XenoYAML makes no attempt whatsoever to validate the default value. References to nonexistent arguments, or circular references between arguments, are left to the modder to avoid.
 - Shorthand builder invocation now accepts any number of optional arguments (as defined above: arguments with a default value) in addition to the one argument being provided.
+
+## 0.9.0 (May 24th, 2026)
+
+- Added new builder keyword: `$template`. When included in a builder definition, it defines the template shape explicitly (as opposed to assuming that any field except `$args` is part of the template).
+  - This allows builders to be used to generate standalone arrays, such as the tuples inside an [`OddmentTable`](https://discord.com/channels/702822278148390983/1507875950153695482/1508027054288015400).
