@@ -1,7 +1,7 @@
 # XenoYAML
 Xenonauts 2 modding tool designed to simplify editing of the game's entity templates by converting them into a more legible, more flexible YAML-based format.
 
-Right now, it has the following capabilities (as of 0.9.x):
+Right now, it has the following capabilities (as of 0.10.x):
 - Importing Artitas projects up to (and presumably exceeding) the size of the all_templates zip (tested in 7.20.4)
 - Merging across screen boundaries at import
 - Basic templating support via YAML anchors and merge keys
@@ -39,8 +39,10 @@ A few notable deviations from Artitas:
         - I do not currently have an answer to situations where a component still manages to be defined twice (i.e. once with `$type` and once with `$t`), but my working theory is that the game will crash on trying to load such a deformed template anyway.
     - Nested Artitas objects (e.g. the contents of a `GCAbilityDefinitions`) are stored as single-object dictionaries. Not my best work, I suppose, but I don't currently have a better idea.
 - The names of Artitas types (components, selectors, etc.) are prefixed with the `:` character, as in `:LocalizableGUID`, to help transform XenoYAML back to Artitas-compatible JSON.
-- `ar_Template` references support one of three formats:
+- `ar_Template` references support one of four formats:
     - The standard Artitas format: `[contentPack]-:-[screen]-::-[path]` (though the `.json` extension is optional)
     - The XenoYAML shorthand format: `[contentPack]%[screen]%[path]` (again, extension optional)
     - The XenoYAML object format, used by default when importing: `{pack: contentPack, screen: screen, path: path}` (extension still optional!)
-- Extra metadata has been added to help XenoYAML detect self-inheriting templates and break the circle on export by inheriting from the `xenonauts` content pack, as per current Goldhawk guidelines.
+    - The `$next` shorthand format, denoting that an overriding template inherits from the original. (This is explicitly illegal in nested templates, and will crash the game if there is no original template being overridden.)
+- Extra metadata has been added to allow XenoYAML to export multiple templates from one YAML file.
+- It is no longer necessary to explicitly specify the `xenonauts`/`$next` content packs in an overriding template that inherits from the original, as XenoYAML handles this internally.

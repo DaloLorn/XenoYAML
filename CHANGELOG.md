@@ -241,3 +241,25 @@ strategy:
 
 - Added new builder keyword: `$template`. When included in a builder definition, it defines the template shape explicitly (as opposed to assuming that any field except `$args` is part of the template).
   - This allows builders to be used to generate standalone arrays, such as the tuples inside an [`OddmentTable`](https://discord.com/channels/702822278148390983/1507875950153695482/1508027054288015400).
+
+## 0.10.0 (June 1st, 2026)
+
+- Added new template ref keyword: `$next`. This serves a similar purpose to the game's own `$next` keyword: When used in an override template's `parent` field, this will automatically resolve to a path to the original template.
+  - Obviously, this is useless in non-override templates, and the game will crash on a missing parent.
+  - Since I can't remember if the vanilla `$next` has been released to the stable branch yet (... and either way, my installation is a few versions out of date...), the override paths are going to use the `xenonauts` content pack until I update to 7.24.0 or newer, at which point a patch will be released to migrate them to the `$next` content pack.
+  - This is *not* supported for nested templates (templates without a `$path`, e.g. those passed to a `:0` or `:PackContents`). There is neither need nor practical purpose for it.
+- Added safeguards against users explicitly specifying the `.json` extension in their export path.
+  - I'm only about 90% sure the extra security isn't redundant with something I've done elsewhere. Doesn't hurt, though.
+- Hardened safeguards against users *omitting* the `.json` extension in any of their paths, by fixing a few spots where the check was case-sensitive.
+- Export paths now support the use of screen prefixes instead of raw folder names. A couple of examples are provided below:
+
+```yaml
+$path: GC/item/armour/psyon_noncom # Reminder: The .json prefix is automatically appended if necessary!
+
+# These examples can't actually coexist in the same file,
+# but it's more compact than opening a second code block.
+GC:
+  item/armour:
+    psyon_warrior:
+      $path: ""
+```

@@ -6,6 +6,7 @@ import readFiles from "../util/readFiles.js";
 import { stringifyTemplate } from "../util/transformComponents.js";
 import batchOperation from "../util/batchOperation.js";
 import { importBuilders } from "../util/buildComponents.js";
+import { fixPath } from "../util/templateReferenceUtils.js";
 
 const METADATA = ["$aliases", "$schema", "$builders"];
 
@@ -119,7 +120,7 @@ async function handler(options) {
         // We'll need the path to actually write the file into the right location.
         return {
           template,
-          path,
+          path: fixPath(path),
         };
       } catch (e) {
         if (e instanceof SyntaxError) {
@@ -148,7 +149,10 @@ async function handler(options) {
     // Can't serialize the XenoYAML metadata!
     if (!packedFile) return;
 
-    const path = `${outputFolder}${sep}${packedFile.path}.json`;
+    if (!packedFile.path.toLowerCase().endsWith(".json"))
+      packedFile.path += ".json";
+
+    const path = `${outputFolder}${sep}${packedFile.path}`;
     const folder = dirname(path);
     if (!writtenFolders.includes(folder)) {
       await mkdir(folder, { recursive: true });
@@ -163,7 +167,7 @@ async function handler(options) {
         pretty ? 2 : undefined,
       ).replaceAll(/([^\\]":\s*)"(-?Infinity)"/gi, "$1$2"),
     );
-    console.log(`Exported ${packedFile.path}.json`);
+    console.log(`Exported ${packedFile.path}`);
     exported = true;
   });
   if (!exported)
