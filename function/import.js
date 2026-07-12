@@ -6,12 +6,12 @@ import {
 } from "path";
 import { stringify } from "yaml";
 import { writeFile, readFile, mkdir } from "fs/promises";
-import { map, keyBy, groupBy, pickBy, values, forEach } from "lodash-es";
+import { map, keyBy, groupBy, values, forEach } from "lodash-es";
 import readFiles from "../util/readFiles.js";
 import isArtitasTemplate from "../util/isArtitasTemplate.js";
-import { parseComponents, parseTemplate } from "../util/transformComponents.js";
-import { parseTemplateReference } from "../util/templateReferenceUtils.js";
+import { parseTemplate } from "../util/transformComponents.js";
 import batchOperation from "../util/batchOperation.js";
+import { CURRENT_SCHEMA } from "../util/miscellaneousConsts.js";
 
 const command = {
   command: "import <project>",
@@ -122,7 +122,7 @@ async function handler(options) {
     await writeFile(
       path,
       stringify(
-        { $schema: "0.4.0", ...parsedFile },
+        { $schemaVersion: CURRENT_SCHEMA, ...parsedFile },
         { defaultKeyType: "PLAIN" },
       ),
     );

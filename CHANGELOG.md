@@ -263,3 +263,16 @@ GC:
     psyon_warrior:
       $path: ""
 ```
+
+# 1.0.0 (July 12nd, 2026)
+
+This is not entirely proper semver, but muscle memory didn't like the double-digit minor version. Besides, it doesn't seem fair to say XenoYAML is in beta anymore, so it's earned its first major release!
+
+- Replaced the reserved YAML keyword `$schema` with `$schemaVersion`. This also raises the schema version to 1.0.0. (It also accidentally offers some proper justification for the major version bump. Sort of. If you squint and tilt your head.)
+- Added an automated migration tool, `upgrade` (aliases: `u`, `migrate`), to upgrade old XenoYAML projects to the latest schema.
+  - Unlike import/export, the migration tool doesn't care about project structure and will simply upgrade all XenoYAML files at the specified location.
+  - Like the merge tool, the migration tool supports a dry-run mode via the `--dryRun` flag (aliases: `-d`, `--test`, `-t`, `-c`, `--check`).
+  - **USER BEWARE**: The YAML library XenoYAML uses to parse YAML does not preserve aliases or file formatting. Do not use this tool if you want to keep your aliases and formatting intact! Instead, review the XenoYAML changelog or ask the developer for help with the migration.
+- Removed an erroneous reference to the export tool from the merge tool's description, and replaced it with a warning about alias preservation (see above).
+- The special template ref `$next` now sets the content pack to `$next` instead of `xenonauts`, in accordance with Goldhawk's latest guidelines. This will take effect automatically when you next export your project (which should be as soon as possible).
+- Applied some overlooked linter fixes.

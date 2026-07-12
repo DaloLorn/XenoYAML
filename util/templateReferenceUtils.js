@@ -3,9 +3,8 @@ import { keys, pickBy } from "lodash-es";
 const ARTITAS_TEMPLATE_REF_REGEX = /(?:(.*)-:-)?(.*)-::-(.*)/;
 const XENOYAML_TEMPLATE_REF_REGEX = /(?:([^%]*)%)?([^%]*)%([^%]*)/;
 
-// TODO: Update this to $next when that goes live.
 // Used to populate the default pack name.
-const INHERITED = "xenonauts";
+const INHERITED = "$next";
 // Used to detect the correct parent screen for the $next keyword.
 // (XenoYAML's $next, not vanilla $next.)
 const SCREENS = {

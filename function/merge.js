@@ -62,7 +62,10 @@ async function handler(options) {
     merge: true,
   });
 
-  if (parsedSource.$schema !== parsedTarget.$schema) {
+  if (
+    parsedSource.$schemaVersion !== parsedTarget.$schemaVersion &&
+    parsedSource.$schema !== parsedTarget.$schema
+  ) {
     console.error(
       "Cannot merge files with different schema versions! Aborting!",
     );
@@ -123,7 +126,7 @@ async function handler(options) {
 
 const userManual = `Attempts to recursively merge two XenoYAML template trees, 
 
-The export tool ideally wants to be targeted at a "xenoyaml" folder or one of its descendants, in order to properly identify the project's root folder (and potentially discover other data, like where it needs to be exported to). If this is not possible, then the target folder will be used as a fallback.
+USER BEWARE: The YAML library XenoYAML uses to parse YAML does not preserve aliases or file formatting, so the merge tool will destroy them. Do not use this tool if you want to keep your aliases and formatting intact! Instead, merge the files manually.
 
 Arguments: 
   <source> - The source file to merge from. Always deleted on a safe merge. (See --unsafe and --forceDelete for more details.)
@@ -134,7 +137,7 @@ Options:
   -u, --unsafe: 
     Instructs the merger to merge overlapping template objects instead of aborting the merge. Overlapping templates are detected by finding all the paths to $path fields throughout the file.
 
-    XenoYAML will still abort merges where the source and target schemas (root-level $schema field) are not the same, or where the source and target both define the same alias with a different set of values. 
+    XenoYAML will still abort merges where the source and target schemas (root-level $schemaVersion field) are not the same, or where the source and target both define the same alias with a different set of values. 
 
     By default, XenoYAML will not delete the source files after an unsafe merge.
 

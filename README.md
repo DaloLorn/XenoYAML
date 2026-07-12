@@ -1,8 +1,8 @@
 # XenoYAML
 Xenonauts 2 modding tool designed to simplify editing of the game's entity templates by converting them into a more legible, more flexible YAML-based format.
 
-Right now, it has the following capabilities (as of 0.10.x):
-- Importing Artitas projects up to (and presumably exceeding) the size of the all_templates zip (tested in 7.20.4)
+Right now, it has the following capabilities (as of 1.x):
+- Importing Artitas projects up to (and presumably exceeding) the size of the base game (tested in 7.26.1)
 - Merging across screen boundaries at import
 - Basic templating support via YAML anchors and merge keys
 - Advanced templating support via the `$builders` mechanic

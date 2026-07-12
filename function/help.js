@@ -1,6 +1,7 @@
 import exportCmd from "./export.js";
 import importCmd from "./import.js";
 import mergeCmd from "./merge.js";
+import migrateCmd from "./migrate.js";
 
 const help = {
   command: "manual <command>",
@@ -15,12 +16,13 @@ const help = {
 export default help;
 
 function isCommand(name) {
-  return (module) => [...module.aliases, module.command.split(" ", 1)[0]].includes(name);
+  return (module) =>
+    [...module.aliases, module.command.split(" ", 1)[0]].includes(name);
 }
 
 function handler(options) {
   const { command } = options;
-  let targetCmd = [exportCmd, importCmd, mergeCmd, help].find(
+  let targetCmd = [exportCmd, importCmd, mergeCmd, migrateCmd, help].find(
     isCommand(command),
   );
   if (!targetCmd) {

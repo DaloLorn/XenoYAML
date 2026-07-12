@@ -8,7 +8,7 @@ import batchOperation from "../util/batchOperation.js";
 import { importBuilders } from "../util/buildComponents.js";
 import { fixPath } from "../util/templateReferenceUtils.js";
 
-const METADATA = ["$aliases", "$schema", "$builders"];
+const METADATA = ["$aliases", "$schema", "$builders", "$schemaVersion"];
 
 const command = {
   command: "* <project>",
