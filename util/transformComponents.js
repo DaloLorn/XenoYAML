@@ -92,6 +92,19 @@ function stringifyReference(data, stringifier) {
   return { Value: value ? stringifier(value) : null };
 }
 
+function stringifyOddmentTable(data) {
+  const elements = data.Elements;
+  if (!elements) return data;
+  return {
+    Elements: elements.map(([weight, result]) => {
+      return [
+        typeof weight === "number" ? `${weight.toFixed(1)}f` : weight,
+        stringifyComponent(result),
+      ];
+    }),
+  };
+}
+
 const STRINGIFY_INTERCEPTORS = {
   ar_Template: stringifyTemplateReference,
   0: buildReferenceStringifier(stringifyTemplate),
@@ -104,6 +117,20 @@ const STRINGIFY_INTERCEPTORS = {
     }
     // Should never happen, but just in case.
     return data;
+  },
+  RecoveredItems: (data) => {
+    if (!isArray(data) || !data.length) return { $content: [] };
+    return {
+      $content: data.map(stringifyOddmentTable),
+    };
+  },
+  ParcelSource: stringifyOddmentTable,
+  BiomeOddmentTable: stringifyOddmentTable,
+  OddmentTableEf: (data) => {
+    if (!data.Value) return data;
+    return {
+      Value: stringifyOddmentTable(data.Value),
+    };
   },
 };
 

@@ -276,3 +276,27 @@ This is not entirely proper semver, but muscle memory didn't like the double-dig
 - Removed an erroneous reference to the export tool from the merge tool's description, and replaced it with a warning about alias preservation (see above).
 - The special template ref `$next` now sets the content pack to `$next` instead of `xenonauts`, in accordance with Goldhawk's latest guidelines. This will take effect automatically when you next export your project (which should be as soon as possible).
 - Applied some overlooked linter fixes.
+
+## 1.1.0 (August 3rd, 2026)
+
+- Added a workaround for overly restrictive parsing surrounding the `OddmentTable` class. Components recognized as containing `OddmentTable`s will now explicitly export floating-point weights to JSON.
+  - This currently works on a hardcoded list of component classes, as I didn't feel fully confident in my ability to safely autodetect the underlying data structure just yet. Autodetection may be added at a later time; for now, please report any omissions as you notice them.
+    - This does not currently work with longform class names, as I haven't yet added them to the type registry. I honestly don't expect it will matter, and I wanted to get this out as soon as possible.
+  - Currently supported components are:
+    - ParcelSource
+    - RecoveredItems
+    - BiomeOddmentTable
+
+For reference, OddmentTables take the form `Elements: Tuple<float, T>[]`, which is another way of saying `Elements: [float, T][]`. In XenoYAML, this might be represented as:
+
+```yaml
+Elements: 
+  - - 1.5 
+    - :0: # ... I'm not going to write out a whole template here.
+        parent: $next%ST%masters/items/weapon_primary
+  - - 3.0
+    - :0: # Still nope.
+        parent: $next%ST%masters/items/weapon_secondary
+```
+
+Further explanation of what an OddmentTable actually *is* can be found in Discord, starting from https://discord.com/channels/702822278148390983/1507875950153695482/1508037456866578453.

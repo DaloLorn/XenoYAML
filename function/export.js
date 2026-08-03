@@ -161,11 +161,9 @@ async function handler(options) {
 
     await writeFile(
       path,
-      JSON.stringify(
-        packedFile.template,
-        undefined,
-        pretty ? 2 : undefined,
-      ).replaceAll(/([^\\]":\s*)"(-?Infinity)"/gi, "$1$2"),
+      JSON.stringify(packedFile.template, undefined, pretty ? 2 : undefined)
+        .replaceAll(/([^\\]":\s*)"(-?Infinity)"/gi, "$1$2")
+        .replaceAll(/([^\\]\[\s*)"(-?\d+\.\d+e?\+?\d?)f"(,)/gi, "$1$2$3"),
     );
     console.log(`Exported ${packedFile.path}`);
     exported = true;
