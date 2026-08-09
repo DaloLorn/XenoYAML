@@ -143,8 +143,10 @@ export function evaluateBuilders(data, builders) {
     // 1. First, identify which keys are builders and which are standard data
     for (const key in data) {
       const value = data[key];
+      const isPrefixed = key.startsWith(PREFIX);
+      const isBuilder = isPrefixed && builders[key];
 
-      if (key.startsWith(PREFIX) && builders[key]) {
+      if (isBuilder) {
         // --- EXECUTE BUILDER ---
         const builder = builders[key];
         let userParams = value;
@@ -210,6 +212,10 @@ export function evaluateBuilders(data, builders) {
 
         // Merge the builder result into our result collector
         mergeWith(result, hydrated, cleanOverrides, safeMerge);
+      } else if (isPrefixed && !isBuilder && !RESERVED.includes(key)) {
+        throw new SyntaxError(
+          `Unknown builder "${key}" in ${JSON.stringify(data)}! No builder with this name is defined in the project.`,
+        );
       } else {
         // --- STANDARD DATA ---
         // Recurse on the value and assign it to the result

@@ -300,3 +300,7 @@ Elements:
 ```
 
 Further explanation of what an OddmentTable actually *is* can be found in Discord, starting from https://discord.com/channels/702822278148390983/1507875950153695482/1508037456866578453.
+
+### 1.1.1 (August 9th, 2026)
+
+- Added safeguards against nonexistent builders after too many instances of crashing my game on a syntax error. Builder evaluation now demands that any key starting in `$` must either be a reserved keyword or a valid builder, and will preemptively throw a syntax error if this is not the case.
